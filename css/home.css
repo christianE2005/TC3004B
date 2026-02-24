@@ -22,6 +22,8 @@ body {
     justify-content: space-between;
     align-items: center;
     box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15);
+    position: relative;
+    z-index: 100;
 }
 
 .navbar .brand {
@@ -40,6 +42,40 @@ body {
     font-size: 1.4rem;
     font-weight: 700;
     letter-spacing: 0.5px;
+}
+
+/* --- Hamburger Button --- */
+.hamburger {
+    display: none;
+    flex-direction: column;
+    justify-content: center;
+    gap: 5px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0.5rem;
+    z-index: 110;
+}
+
+.hamburger span {
+    display: block;
+    width: 26px;
+    height: 3px;
+    background: #ffffff;
+    border-radius: 3px;
+    transition: transform 0.3s, opacity 0.3s;
+}
+
+.hamburger.active span:nth-child(1) {
+    transform: translateY(8px) rotate(45deg);
+}
+
+.hamburger.active span:nth-child(2) {
+    opacity: 0;
+}
+
+.hamburger.active span:nth-child(3) {
+    transform: translateY(-8px) rotate(-45deg);
 }
 
 .navbar nav a {
@@ -154,25 +190,101 @@ body {
 
 /* ---------- Footer ---------- */
 .footer {
-    background: #1a237e;
+    background: #0d1b4a;
     color: #c5cae9;
-    text-align: center;
-    padding: 1.5rem;
+    padding: 0;
     font-size: 0.85rem;
     margin-top: 3rem;
 }
 
-.footer a {
-    color: #00bcd4;
-    text-decoration: none;
+.footer-content {
+    display: flex;
+    justify-content: space-between;
+    gap: 2rem;
+    padding: 2.5rem 2rem 1.5rem;
+    max-width: 1100px;
+    margin: 0 auto;
+    flex-wrap: wrap;
 }
 
-.footer a:hover {
-    text-decoration: underline;
+.footer-section {
+    flex: 1;
+    min-width: 180px;
+}
+
+.footer-section h4 {
+    color: #ffffff;
+    font-size: 1rem;
+    margin-bottom: 0.8rem;
+    font-weight: 600;
+}
+
+.footer-section p {
+    margin-bottom: 0.4rem;
+    line-height: 1.6;
+    color: #9fa8da;
+}
+
+.footer-section a {
+    display: block;
+    color: #9fa8da;
+    text-decoration: none;
+    margin-bottom: 0.4rem;
+    transition: color 0.3s;
+}
+
+.footer-section a:hover {
+    color: #00bcd4;
+}
+
+.footer-bottom {
+    text-align: center;
+    padding: 1rem 2rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.footer-bottom p {
+    color: #7986cb;
+    font-size: 0.82rem;
 }
 
 /* ---------- Responsive ---------- */
 @media (max-width: 768px) {
+    .hamburger {
+        display: flex;
+    }
+
+    .navbar nav {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        background: linear-gradient(135deg, #1a237e, #283593);
+        flex-direction: column;
+        padding: 0;
+        max-height: 0;
+        overflow: hidden;
+        transition: max-height 0.4s ease, padding 0.4s ease;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    }
+
+    .navbar nav.open {
+        max-height: 300px;
+        padding: 1rem 0;
+    }
+
+    .navbar nav a {
+        margin: 0;
+        padding: 0.75rem 2rem;
+        display: block;
+        border-bottom: none;
+    }
+
+    .navbar nav a.active {
+        border-bottom: none;
+        background: rgba(255, 255, 255, 0.08);
+    }
+
     .hero h1 {
         font-size: 1.8rem;
     }
@@ -181,12 +293,35 @@ body {
         font-size: 1rem;
     }
 
-    .navbar {
+    .footer-content {
         flex-direction: column;
-        gap: 0.8rem;
+        text-align: center;
+        gap: 1.5rem;
     }
 
-    .navbar nav a {
-        margin-left: 0.8rem;
+    .footer-section {
+        min-width: 100%;
+    }
+}
+
+@media (max-width: 480px) {
+    .navbar {
+        padding: 0.8rem 1rem;
+    }
+
+    .navbar .brand-name {
+        font-size: 1.2rem;
+    }
+
+    .hero {
+        padding: 3rem 1rem;
+    }
+
+    .hero h1 {
+        font-size: 1.5rem;
+    }
+
+    .section {
+        padding: 2rem 1rem;
     }
 }

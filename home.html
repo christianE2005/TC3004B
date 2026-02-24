@@ -8,21 +8,26 @@
 </head>
 <body>
 
-    <!--  NAVBAR proximamente hacerlo componente-->
+    <!--  NAVBAR -->
     <header class="navbar">
         <div class="brand">
-            <span class="brand-name">qui tambien iria el logo</span>
+            <span class="brand-name">Tech Mihandra</span>
         </div>
-        <nav>
+        <button class="hamburger" id="hamburger" aria-label="Abrir menú">
+            <span></span>
+            <span></span>
+            <span></span>
+        </button>
+        <nav id="nav-menu">
             <a href="home.html" class="active">Inicio</a>
-            <a href="#">Servicios</a>
+            <a href="#servicios">Servicios</a>
             <a href="#">Contacto</a>
-            <a href="login.html">Cerrar Sesión</a>
+            <a href="#" id="btn-logout" onclick="logout()">Cerrar Sesión</a>
         </nav>
     </header>
 
     <section class="hero">
-        <h1>Bienvenido a Tech Mihandra</h1>
+        <h1>Bienvenido, <span id="user-name">Usuario</span></h1>
         <p>Soluciones tecnológicas innovadoras para impulsar tu negocio al siguiente nivel.</p>
         <a href="#servicios" class="btn-hero">Explorar Servicios</a>
     </section>
@@ -32,27 +37,75 @@
         <h2>Nuestros Servicios</h2>
         <div class="cards">
             <div class="card">
-                <div class="card-icon"></div>
+                <div class="card-icon">💻</div>
                 <h3>Desarrollo Web</h3>
                 <p>Creamos sitios web modernos y responsivos que conectan con tus clientes de forma efectiva.</p>
             </div>
             <div class="card">
-                <div class="card-icon"></div>
+                <div class="card-icon">📱</div>
                 <h3>Aplicaciones Móviles</h3>
                 <p>Desarrollamos apps nativas y multiplataforma para iOS y Android con la mejor experiencia.</p>
             </div>
             <div class="card">
-                <div class="card-icon"></div>
+                <div class="card-icon">☁️</div>
                 <h3>Soluciones Cloud</h3>
                 <p>Infraestructura escalable en la nube para garantizar el rendimiento de tus sistemas.</p>
             </div>
         </div>
     </section>
 
-    <!--  FOOTER tambien pasarlo a un componente -->
+    <!-- FOOTER -->
     <footer class="footer">
-        <p>&copy; 2026 Tech Mihandra. Todos los derechos reservados.</p>
+        <div class="footer-content">
+            <div class="footer-section">
+                <h4>Tech Mihandra</h4>
+                <p>Soluciones tecnológicas innovadoras para impulsar tu negocio.</p>
+            </div>
+            <div class="footer-section">
+                <h4>Enlaces</h4>
+                <a href="home.html">Inicio</a>
+                <a href="#servicios">Servicios</a>
+                <a href="#">Contacto</a>
+            </div>
+            <div class="footer-section">
+                <h4>Contacto</h4>
+                <p>info@techmihandra.com</p>
+                <p>+52 000 000 0000</p>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; 2026 Tech Mihandra. Todos los derechos reservados.</p>
+        </div>
     </footer>
+
+    <script>
+        // --- Proteger página: verificar token ---
+        (function() {
+            const token = sessionStorage.getItem('authToken');
+            if (!token) {
+                window.location.href = 'login.html';
+                return;
+            }
+            // Mostrar nombre de usuario
+            const user = sessionStorage.getItem('user');
+            if (user) {
+                document.getElementById('user-name').textContent = user;
+            }
+        })();
+
+        // --- Cerrar sesión: eliminar token ---
+        function logout() {
+            sessionStorage.removeItem('authToken');
+            sessionStorage.removeItem('user');
+            window.location.href = 'login.html';
+        }
+
+        // --- Hamburger menu ---
+        document.getElementById('hamburger').addEventListener('click', function() {
+            this.classList.toggle('active');
+            document.getElementById('nav-menu').classList.toggle('open');
+        });
+    </script>
 
 </body>
 </html>

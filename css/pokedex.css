@@ -1,6 +1,4 @@
-/* ===== POKÉDEX - Tech Mihandra ===== */
 
-/* ---------- Reset & Base ---------- */
 * {
     margin: 0;
     padding: 0;
@@ -14,7 +12,6 @@ body {
     color: #333;
 }
 
-/* ---------- Navbar ---------- */
 .navbar {
     background: linear-gradient(135deg, #1a237e, #283593);
     padding: 1rem 2rem;
@@ -82,7 +79,7 @@ body {
     padding-bottom: 4px;
 }
 
-/* ---------- Hero ---------- */
+
 .hero {
     background: linear-gradient(135deg, #1a237e 0%, #0d47a1 100%);
     color: #ffffff;

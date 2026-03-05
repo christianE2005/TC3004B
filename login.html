@@ -79,8 +79,12 @@
     </footer>
 
     <script>
-        // --- Login con JWT via backend ---
-        async function handleLogin(e) {
+        // --- Credenciales ---
+        const VALID_USER = 'chris';
+        const VALID_PASSWORD = 'sandia';
+
+        
+        function handleLogin(e) {
             e.preventDefault();
             const username = document.getElementById('username').value.trim();
             const password = document.getElementById('password').value;
@@ -93,45 +97,21 @@
                 return false;
             }
 
-            try {
-                const res = await fetch('/api/login', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ username, password })
-                });
-
-                const data = await res.json();
-
-                if (data.success) {
-                    // Guardar el JWT en sessionStorage
-                    sessionStorage.setItem('authToken', data.token);
-                    sessionStorage.setItem('user', data.user);
-                    window.location.href = 'pokedex.html';
-                } else {
-                    errorEl.textContent = data.message || 'Usuario o contraseña incorrectos';
-                    errorEl.style.display = 'block';
-                }
-            } catch (err) {
-                errorEl.textContent = 'Error de conexión con el servidor';
+            if (username === VALID_USER && password === VALID_PASSWORD) {
+                sessionStorage.setItem('authenticated', 'true');
+                sessionStorage.setItem('user', username);
+                window.location.href = 'pokedex.html';
+            } else {
+                errorEl.textContent = 'Usuario o contraseña incorrectos';
                 errorEl.style.display = 'block';
-                console.error('Login error:', err);
             }
             return false;
         }
 
-        // Si ya tiene token válido, redirigir al home
-        (async function checkExistingToken() {
-            const token = sessionStorage.getItem('authToken');
-            if (token) {
-                try {
-                    const res = await fetch('/api/verify', {
-                        headers: { 'Authorization': 'Bearer ' + token }
-                    });
-                    const data = await res.json();
-                    if (data.valid) {
-                        window.location.href = 'pokedex.html';
-                    }
-                } catch (e) { /* token inválido, se queda en login */ }
+        // Si ya está autenticado, redirigir al home
+        (function checkExistingSession() {
+            if (sessionStorage.getItem('authenticated') === 'true') {
+                window.location.href = 'pokedex.html';
             }
         })();
 

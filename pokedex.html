@@ -8,7 +8,6 @@
 </head>
 <body>
 
-    <!-- NAVBAR -->
     <header class="navbar">
         <div class="brand">
             <span class="brand-name">Tech Mahindra</span>
@@ -25,13 +24,11 @@
         </nav>
     </header>
 
-    <!-- HERO -->
     <section class="hero">  
-        <h1>Pokédex Completa</h1>
-        <p>Explora todos los Pokémon con sus estadísticas usando la PokéAPI</p>
+        <h1>Pokédex</h1>
     </section>
 
-    <!-- CONTROLES -->
+
     <section class="controls">
         <div class="search-box">
             <input type="text" id="search-input" placeholder="Buscar Pokémon por nombre o número..." autocomplete="off">
@@ -64,10 +61,9 @@
         </div>
     </section>
 
-    <!-- GRID DE POKÉMON -->
     <section class="pokedex-section">
         <div class="pokemon-grid" id="pokemon-grid">
-            <!-- Cards se generan dinámicamente -->
+
         </div>
         <div class="loading-container" id="loading">
             <div class="pokeball-spinner"></div>
@@ -83,12 +79,10 @@
         <div class="modal" id="pokemon-modal">
             <button class="modal-close" id="modal-close">&times;</button>
             <div class="modal-body" id="modal-body">
-                <!-- Contenido dinámico -->
             </div>
         </div>
     </div>
 
-    <!-- FOOTER -->
     <footer class="footer">
         <div class="footer-content">
             <div class="footer-section">
@@ -112,25 +106,15 @@
     </footer>
 
     <script>
-        // ========== AUTH ==========
-        (async function() {
-            const token = sessionStorage.getItem('authToken');
-            if (!token) { window.location.href = 'login.html'; return; }
-            try {
-                const res = await fetch('/api/verify', {
-                    headers: { 'Authorization': 'Bearer ' + token }
-                });
-                const data = await res.json();
-                if (!data.valid) {
-                    sessionStorage.removeItem('authToken');
-                    sessionStorage.removeItem('user');
-                    window.location.href = 'login.html';
-                }
-            } catch (err) { /* offline: keep session */ }
+        (function() {
+            if (sessionStorage.getItem('authenticated') !== 'true') {
+                window.location.href = 'login.html';
+                return;
+            }
         })();
 
         function logout() {
-            sessionStorage.removeItem('authToken');
+            sessionStorage.removeItem('authenticated');
             sessionStorage.removeItem('user');
             window.location.href = 'login.html';
         }
@@ -141,11 +125,11 @@
             document.getElementById('nav-menu').classList.toggle('open');
         });
 
-        // ========== POKÉDEX ==========
-        const BATCH_SIZE = 40;          // Pokémon por lote
+
+        const BATCH_SIZE = 40;          
         const API_BASE = 'https://pokeapi.co/api/v2';
-        let allPokemonList = [];        // Lista ligera {name, url}
-        let loadedPokemon = [];         // Datos completos cargados
+        let allPokemonList = [];        
+        let loadedPokemon = [];         
         let currentOffset = 0;
         let isLoading = false;
         let totalPokemonCount = 0;
@@ -159,7 +143,6 @@
         const shownCount = document.getElementById('shown-count');
         const totalCountEl = document.getElementById('total-count');
 
-        // --- 1. Obtener lista completa de Pokémon (nombre + url) ---
         async function fetchPokemonList() {
             const res = await fetch(`${API_BASE}/pokemon?limit=1025&offset=0`);
             const data = await res.json();
@@ -168,13 +151,11 @@
             allPokemonList = data.results;
         }
 
-        // --- 2. Fetch detallado de un Pokémon ---
         async function fetchPokemonDetail(url) {
             const res = await fetch(url);
             return await res.json();
         }
 
-        // --- 3. Cargar un lote de Pokémon ---
         async function loadBatch() {
             if (isLoading) return;
             isLoading = true;
@@ -188,7 +169,6 @@
                 return;
             }
 
-            // Fetch en paralelo (lotes de 10 para no saturar)
             const chunkSize = 10;
             for (let i = 0; i < batch.length; i += chunkSize) {
                 const chunk = batch.slice(i, i + chunkSize);
@@ -209,7 +189,6 @@
             }
         }
 
-        // --- 4. Renderizar grid ---
         function renderGrid() {
             const search = searchInput.value.toLowerCase().trim();
             const typeVal = typeFilter.value;
@@ -287,7 +266,6 @@
             }).join('');
         }
 
-        // --- 5. Modal con detalle completo ---
         async function openModal(id) {
             const overlay = document.getElementById('modal-overlay');
             const body = document.getElementById('modal-body');
@@ -367,7 +345,6 @@
             if (e.target === e.currentTarget) closeModal();
         });
 
-        // --- Utilidades ---
         function capitalize(str) {
             return str.charAt(0).toUpperCase() + str.slice(1);
         }
@@ -389,12 +366,10 @@
             return map[name] || name;
         }
 
-        // --- Eventos ---
         searchInput.addEventListener('input', renderGrid);
         typeFilter.addEventListener('change', renderGrid);
         btnLoadMore.addEventListener('click', loadBatch);
 
-        // --- Inicio ---
         (async function init() {
             await fetchPokemonList();
             await loadBatch();

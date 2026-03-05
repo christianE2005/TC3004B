@@ -18,7 +18,7 @@
             <span></span>
         </button>
         <nav id="nav-menu">
-            <a href="home.html">Inicio</a>
+            <a href="pokedex.html">Inicio</a>
             <a href="#">Servicios</a>
             <a href="#">Contacto</a>
             <a href="login.html" class="active">Iniciar Sesión</a>
@@ -63,7 +63,7 @@
             </div>
             <div class="footer-section">
                 <h4>Enlaces</h4>
-                <a href="home.html">Inicio</a>
+                <a href="pokedex.html">Inicio</a>
                 <a href="#">Servicios</a>
                 <a href="#">Contacto</a>
             </div>
@@ -106,7 +106,7 @@
                     // Guardar el JWT en sessionStorage
                     sessionStorage.setItem('authToken', data.token);
                     sessionStorage.setItem('user', data.user);
-                    window.location.href = 'home.html';
+                    window.location.href = 'pokedex.html';
                 } else {
                     errorEl.textContent = data.message || 'Usuario o contraseña incorrectos';
                     errorEl.style.display = 'block';
@@ -129,7 +129,7 @@
                     });
                     const data = await res.json();
                     if (data.valid) {
-                        window.location.href = 'home.html';
+                        window.location.href = 'pokedex.html';
                     }
                 } catch (e) { /* token inválido, se queda en login */ }
             }

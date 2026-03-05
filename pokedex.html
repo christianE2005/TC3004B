@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pokédex - Tech Mahindra</title>
+    <link rel="stylesheet" href="css/pokedex.css">
+</head>
+<body>
+
+    <!-- NAVBAR -->
+    <header class="navbar">
+        <div class="brand">
+            <span class="brand-name">Tech Mahindra</span>
+        </div>
+        <button class="hamburger" id="hamburger" aria-label="Abrir menú">
+            <span></span>
+            <span></span>
+            <span></span>
+        </button>
+        <nav id="nav-menu">
+            <a href="pokedex.html">Inicio</a>
+            <a href="pokedex.html" class="active">Pokédex</a>
+            <a href="#" id="btn-logout" onclick="logout()">Cerrar Sesión</a>
+        </nav>
+    </header>
+
+    <!-- HERO -->
+    <section class="hero">  
+        <h1>Pokédex Completa</h1>
+        <p>Explora todos los Pokémon con sus estadísticas usando la PokéAPI</p>
+    </section>
+
+    <!-- CONTROLES -->
+    <section class="controls">
+        <div class="search-box">
+            <input type="text" id="search-input" placeholder="Buscar Pokémon por nombre o número..." autocomplete="off">
+        </div>
+        <div class="filter-row">
+            <select id="type-filter">
+                <option value="">Todos los tipos</option>
+                <option value="normal">Normal</option>
+                <option value="fire">Fire</option>
+                <option value="water">Water</option>
+                <option value="electric">Electric</option>
+                <option value="grass">Grass</option>
+                <option value="ice">Ice</option>
+                <option value="fighting">Fighting</option>
+                <option value="poison">Poison</option>
+                <option value="ground">Ground</option>
+                <option value="flying">Flying</option>
+                <option value="psychic">Psychic</option>
+                <option value="bug">Bug</option>
+                <option value="rock">Rock</option>
+                <option value="ghost">Ghost</option>
+                <option value="dragon">Dragon</option>
+                <option value="dark">Dark</option>
+                <option value="steel">Steel</option>
+                <option value="fairy">Fairy</option>
+            </select>
+            <div class="pokemon-count">
+                <span id="shown-count">0</span> / <span id="total-count">0</span> Pokémon
+            </div>
+        </div>
+    </section>
+
+    <!-- GRID DE POKÉMON -->
+    <section class="pokedex-section">
+        <div class="pokemon-grid" id="pokemon-grid">
+            <!-- Cards se generan dinámicamente -->
+        </div>
+        <div class="loading-container" id="loading">
+            <div class="pokeball-spinner"></div>
+            <p>Cargando Pokémon...</p>
+        </div>
+        <div class="load-more-container" id="load-more-container" style="display:none;">
+            <button class="btn-load-more" id="btn-load-more">Cargar más Pokémon</button>
+        </div>
+    </section>
+
+    <!-- MODAL DETALLE -->
+    <div class="modal-overlay" id="modal-overlay">
+        <div class="modal" id="pokemon-modal">
+            <button class="modal-close" id="modal-close">&times;</button>
+            <div class="modal-body" id="modal-body">
+                <!-- Contenido dinámico -->
+            </div>
+        </div>
+    </div>
+
+    <!-- FOOTER -->
+    <footer class="footer">
+        <div class="footer-content">
+            <div class="footer-section">
+                <h4>Tech Mihandra</h4>
+                <p>Soluciones tecnológicas innovadoras para impulsar tu negocio.</p>
+            </div>
+            <div class="footer-section">
+                <h4>Enlaces</h4>
+                <a href="home.html">Inicio</a>
+                <a href="pokedex.html">Pokédex</a>
+            </div>
+            <div class="footer-section">
+                <h4>Contacto</h4>
+                <p>info@techmihandra.com</p>
+                <p>+52 000 000 0000</p>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; 2026 Tech Mihandra. Todos los derechos reservados.</p>
+        </div>
+    </footer>
+
+    <script>
+        // ========== AUTH ==========
+        (async function() {
+            const token = sessionStorage.getItem('authToken');
+            if (!token) { window.location.href = 'login.html'; return; }
+            try {
+                const res = await fetch('/api/verify', {
+                    headers: { 'Authorization': 'Bearer ' + token }
+                });
+                const data = await res.json();
+                if (!data.valid) {
+                    sessionStorage.removeItem('authToken');
+                    sessionStorage.removeItem('user');
+                    window.location.href = 'login.html';
+                }
+            } catch (err) { /* offline: keep session */ }
+        })();
+
+        function logout() {
+            sessionStorage.removeItem('authToken');
+            sessionStorage.removeItem('user');
+            window.location.href = 'login.html';
+        }
+
+        // Hamburger
+        document.getElementById('hamburger').addEventListener('click', function() {
+            this.classList.toggle('active');
+            document.getElementById('nav-menu').classList.toggle('open');
+        });
+
+        // ========== POKÉDEX ==========
+        const BATCH_SIZE = 40;          // Pokémon por lote
+        const API_BASE = 'https://pokeapi.co/api/v2';
+        let allPokemonList = [];        // Lista ligera {name, url}
+        let loadedPokemon = [];         // Datos completos cargados
+        let currentOffset = 0;
+        let isLoading = false;
+        let totalPokemonCount = 0;
+
+        const grid = document.getElementById('pokemon-grid');
+        const loading = document.getElementById('loading');
+        const loadMoreContainer = document.getElementById('load-more-container');
+        const btnLoadMore = document.getElementById('btn-load-more');
+        const searchInput = document.getElementById('search-input');
+        const typeFilter = document.getElementById('type-filter');
+        const shownCount = document.getElementById('shown-count');
+        const totalCountEl = document.getElementById('total-count');
+
+        // --- 1. Obtener lista completa de Pokémon (nombre + url) ---
+        async function fetchPokemonList() {
+            const res = await fetch(`${API_BASE}/pokemon?limit=1025&offset=0`);
+            const data = await res.json();
+            totalPokemonCount = data.results.length;
+            totalCountEl.textContent = totalPokemonCount;
+            allPokemonList = data.results;
+        }
+
+        // --- 2. Fetch detallado de un Pokémon ---
+        async function fetchPokemonDetail(url) {
+            const res = await fetch(url);
+            return await res.json();
+        }
+
+        // --- 3. Cargar un lote de Pokémon ---
+        async function loadBatch() {
+            if (isLoading) return;
+            isLoading = true;
+            loading.style.display = 'flex';
+            loadMoreContainer.style.display = 'none';
+
+            const batch = allPokemonList.slice(currentOffset, currentOffset + BATCH_SIZE);
+            if (batch.length === 0) {
+                loading.style.display = 'none';
+                isLoading = false;
+                return;
+            }
+
+            // Fetch en paralelo (lotes de 10 para no saturar)
+            const chunkSize = 10;
+            for (let i = 0; i < batch.length; i += chunkSize) {
+                const chunk = batch.slice(i, i + chunkSize);
+                const details = await Promise.all(chunk.map(p => fetchPokemonDetail(p.url)));
+                details.forEach(pokemon => {
+                    loadedPokemon.push(pokemon);
+                });
+            }
+
+            currentOffset += batch.length;
+            isLoading = false;
+            loading.style.display = 'none';
+
+            renderGrid();
+
+            if (currentOffset < allPokemonList.length) {
+                loadMoreContainer.style.display = 'flex';
+            }
+        }
+
+        // --- 4. Renderizar grid ---
+        function renderGrid() {
+            const search = searchInput.value.toLowerCase().trim();
+            const typeVal = typeFilter.value;
+
+            const filtered = loadedPokemon.filter(p => {
+                const matchName = p.name.includes(search) || String(p.id).includes(search);
+                const matchType = !typeVal || p.types.some(t => t.type.name === typeVal);
+                return matchName && matchType;
+            });
+
+            shownCount.textContent = filtered.length;
+
+            grid.innerHTML = filtered.map(p => {
+                const img = p.sprites.other['official-artwork'].front_default
+                    || p.sprites.front_default
+                    || '';
+                const types = p.types.map(t =>
+                    `<span class="poke-type type-${t.type.name}">${t.type.name}</span>`
+                ).join('');
+
+                const stats = p.stats;
+                const hp  = stats[0].base_stat;
+                const atk = stats[1].base_stat;
+                const def = stats[2].base_stat;
+                const spAtk = stats[3].base_stat;
+                const spDef = stats[4].base_stat;
+                const spd = stats[5].base_stat;
+                const total = hp + atk + def + spAtk + spDef + spd;
+
+                return `
+                <div class="poke-card" onclick="openModal(${p.id})" data-id="${p.id}">
+                    <div class="poke-card-header">
+                        <span class="poke-id">#${String(p.id).padStart(3, '0')}</span>
+                    </div>
+                    <img src="${img}" alt="${p.name}" class="poke-img" loading="lazy">
+                    <h3 class="poke-name">${capitalize(p.name)}</h3>
+                    <div class="poke-types">${types}</div>
+                    <div class="poke-stats-mini">
+                        <div class="mini-stat">
+                            <span class="mini-label">HP</span>
+                            <div class="mini-bar"><div class="mini-fill" style="width:${clamp(hp)}%;background:${statColor(hp)}"></div></div>
+                            <span class="mini-val">${hp}</span>
+                        </div>
+                        <div class="mini-stat">
+                            <span class="mini-label">ATK</span>
+                            <div class="mini-bar"><div class="mini-fill" style="width:${clamp(atk)}%;background:${statColor(atk)}"></div></div>
+                            <span class="mini-val">${atk}</span>
+                        </div>
+                        <div class="mini-stat">
+                            <span class="mini-label">DEF</span>
+                            <div class="mini-bar"><div class="mini-fill" style="width:${clamp(def)}%;background:${statColor(def)}"></div></div>
+                            <span class="mini-val">${def}</span>
+                        </div>
+                        <div class="mini-stat">
+                            <span class="mini-label">SpA</span>
+                            <div class="mini-bar"><div class="mini-fill" style="width:${clamp(spAtk)}%;background:${statColor(spAtk)}"></div></div>
+                            <span class="mini-val">${spAtk}</span>
+                        </div>
+                        <div class="mini-stat">
+                            <span class="mini-label">SpD</span>
+                            <div class="mini-bar"><div class="mini-fill" style="width:${clamp(spDef)}%;background:${statColor(spDef)}"></div></div>
+                            <span class="mini-val">${spDef}</span>
+                        </div>
+                        <div class="mini-stat">
+                            <span class="mini-label">SPD</span>
+                            <div class="mini-bar"><div class="mini-fill" style="width:${clamp(spd)}%;background:${statColor(spd)}"></div></div>
+                            <span class="mini-val">${spd}</span>
+                        </div>
+                        <div class="mini-stat total">
+                            <span class="mini-label">TOT</span>
+                            <span class="mini-val-total">${total}</span>
+                        </div>
+                    </div>
+                </div>`;
+            }).join('');
+        }
+
+        // --- 5. Modal con detalle completo ---
+        async function openModal(id) {
+            const overlay = document.getElementById('modal-overlay');
+            const body = document.getElementById('modal-body');
+            overlay.classList.add('active');
+            body.innerHTML = '<div class="modal-loading"><div class="pokeball-spinner"></div></div>';
+
+            let pokemon = loadedPokemon.find(p => p.id === id);
+            if (!pokemon) {
+                pokemon = await fetchPokemonDetail(`${API_BASE}/pokemon/${id}`);
+            }
+
+            // Fetch species para descripción
+            let description = '';
+            try {
+                const specRes = await fetch(`${API_BASE}/pokemon-species/${id}`);
+                const specData = await specRes.json();
+                const entry = specData.flavor_text_entries.find(e => e.language.name === 'es')
+                    || specData.flavor_text_entries.find(e => e.language.name === 'en');
+                if (entry) description = entry.flavor_text.replace(/\f|\n/g, ' ');
+            } catch (e) { /* sin descripción */ }
+
+            const img = pokemon.sprites.other['official-artwork'].front_default
+                || pokemon.sprites.front_default || '';
+            const stats = pokemon.stats;
+            const mainType = pokemon.types[0].type.name;
+
+            body.innerHTML = `
+                <div class="modal-header type-bg-${mainType}">
+                    <img src="${img}" alt="${pokemon.name}" class="modal-img">
+                </div>
+                <div class="modal-info">
+                    <span class="modal-id">#${String(pokemon.id).padStart(3, '0')}</span>
+                    <h2 class="modal-name">${capitalize(pokemon.name)}</h2>
+                    <div class="modal-types">
+                        ${pokemon.types.map(t => `<span class="poke-type type-${t.type.name}">${t.type.name}</span>`).join('')}
+                    </div>
+                    ${description ? `<p class="modal-desc">${description}</p>` : ''}
+                    <div class="modal-measures">
+                        <div><strong>Altura</strong><span>${(pokemon.height / 10).toFixed(1)} m</span></div>
+                        <div><strong>Peso</strong><span>${(pokemon.weight / 10).toFixed(1)} kg</span></div>
+                        <div><strong>Exp. Base</strong><span>${pokemon.base_experience || '—'}</span></div>
+                    </div>
+                    <h3 class="modal-stats-title">Estadísticas Base</h3>
+                    <div class="modal-stats">
+                        ${stats.map(s => {
+                            const val = s.base_stat;
+                            const label = statLabel(s.stat.name);
+                            return `
+                            <div class="modal-stat-row">
+                                <span class="modal-stat-name">${label}</span>
+                                <span class="modal-stat-val">${val}</span>
+                                <div class="modal-stat-bar">
+                                    <div class="modal-stat-fill" style="width:${clamp(val)}%;background:${statColor(val)}"></div>
+                                </div>
+                            </div>`;
+                        }).join('')}
+                        <div class="modal-stat-row total-row">
+                            <span class="modal-stat-name">Total</span>
+                            <span class="modal-stat-val">${stats.reduce((a, s) => a + s.base_stat, 0)}</span>
+                        </div>
+                    </div>
+                    <h3 class="modal-stats-title">Habilidades</h3>
+                    <div class="modal-abilities">
+                        ${pokemon.abilities.map(a =>
+                            `<span class="ability-tag${a.is_hidden ? ' hidden-ability' : ''}">${capitalize(a.ability.name.replace('-', ' '))}${a.is_hidden ? ' (Oculta)' : ''}</span>`
+                        ).join('')}
+                    </div>
+                </div>
+            `;
+        }
+
+        function closeModal() {
+            document.getElementById('modal-overlay').classList.remove('active');
+        }
+        document.getElementById('modal-close').addEventListener('click', closeModal);
+        document.getElementById('modal-overlay').addEventListener('click', e => {
+            if (e.target === e.currentTarget) closeModal();
+        });
+
+        // --- Utilidades ---
+        function capitalize(str) {
+            return str.charAt(0).toUpperCase() + str.slice(1);
+        }
+        function clamp(val) {
+            return Math.min((val / 255) * 100, 100);
+        }
+        function statColor(val) {
+            if (val < 50)  return '#f44336';
+            if (val < 80)  return '#ff9800';
+            if (val < 100) return '#ffc107';
+            if (val < 130) return '#8bc34a';
+            return '#4caf50';
+        }
+        function statLabel(name) {
+            const map = {
+                'hp': 'HP', 'attack': 'Ataque', 'defense': 'Defensa',
+                'special-attack': 'At. Esp.', 'special-defense': 'Def. Esp.', 'speed': 'Velocidad'
+            };
+            return map[name] || name;
+        }
+
+        // --- Eventos ---
+        searchInput.addEventListener('input', renderGrid);
+        typeFilter.addEventListener('change', renderGrid);
+        btnLoadMore.addEventListener('click', loadBatch);
+
+        // --- Inicio ---
+        (async function init() {
+            await fetchPokemonList();
+            await loadBatch();
+        })();
+    </script>
+
+</body>
+</html>

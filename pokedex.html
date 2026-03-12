@@ -18,7 +18,6 @@
             <span></span>
         </button>
         <nav id="nav-menu">
-            <a href="pokedex.html">Inicio</a>
             <a href="pokedex.html" class="active">Pokédex</a>
             <a href="#" id="btn-logout" onclick="logout()">Cerrar Sesión</a>
         </nav>
@@ -83,6 +82,59 @@
         </div>
     </div>
 
+    <!-- ===== BATTLE SECTION ===== -->
+    <section class="battle-section" id="battle-section">
+        <div class="battle-section-inner">
+            <h2 class="battle-title">Batalla Pokémon</h2>
+            <p class="battle-subtitle">Elige dos Pokémon y deja que la batalla comience</p>
+
+            <div class="battle-selectors">
+                <div class="selector-block">
+                    <label>Pokémon 1</label>
+                    <select id="battle-p1"><option>Cargando…</option></select>
+                </div>
+                <div class="vs-badge">VS</div>
+                <div class="selector-block">
+                    <label>Pokémon 2</label>
+                    <select id="battle-p2"><option>Cargando…</option></select>
+                </div>
+            </div>
+
+            <button class="btn-battle" id="btn-battle" onclick="startBattle()">¡Combatir!</button>
+
+            <div class="battle-arena" id="battle-arena">
+                <div class="arena-fighters">
+                    <div class="fighter fighter-left" id="fighter-p1">
+                        <img id="arena-img-p1" src="" alt="" class="arena-poke-img">
+                        <div class="fighter-name" id="arena-name-p1"></div>
+                        <div class="hp-bar-wrap">
+                            <div class="hp-bar" id="hp-bar-p1"></div>
+                        </div>
+                        <div class="hp-text" id="hp-text-p1">100%</div>
+                    </div>
+                    <div class="arena-divider">⚔</div>
+                    <div class="fighter fighter-right" id="fighter-p2">
+                        <img id="arena-img-p2" src="" alt="" class="arena-poke-img">
+                        <div class="fighter-name" id="arena-name-p2"></div>
+                        <div class="hp-bar-wrap">
+                            <div class="hp-bar" id="hp-bar-p2"></div>
+                        </div>
+                        <div class="hp-text" id="hp-text-p2">100%</div>
+                    </div>
+                </div>
+
+                <div class="battle-log" id="battle-log"></div>
+
+                <div class="battle-winner" id="battle-winner">
+                    <h2 class="winner-title" id="winner-title">¡GANADOR!</h2>
+                    <img id="winner-img" src="" alt="" class="winner-img">
+                    <div class="winner-name" id="winner-name"></div>
+                </div>
+            </div>
+        </div>
+    </section>
+    <!-- ===== END BATTLE SECTION ===== -->
+
     <footer class="footer">
         <div class="footer-content">
             <div class="footer-section">
@@ -119,14 +171,7 @@
             window.location.href = 'login.html';
         }
 
-        // Hamburger
-        document.getElementById('hamburger').addEventListener('click', function() {
-            this.classList.toggle('active');
-            document.getElementById('nav-menu').classList.toggle('open');
-        });
-
-
-        const BATCH_SIZE = 40;          
+        const BATCH_SIZE = 50;          
         const API_BASE = 'https://pokeapi.co/api/v2';
         let allPokemonList = [];        
         let loadedPokemon = [];         
@@ -183,6 +228,7 @@
             loading.style.display = 'none';
 
             renderGrid();
+            populateBattleSelectors();
 
             if (currentOffset < allPokemonList.length) {
                 loadMoreContainer.style.display = 'flex';
@@ -369,6 +415,259 @@
         searchInput.addEventListener('input', renderGrid);
         typeFilter.addEventListener('change', renderGrid);
         btnLoadMore.addEventListener('click', loadBatch);
+
+        // =============================================
+        //  BATALLA POKÉMON
+        // =============================================
+
+        // Nombres de ataques normales y especiales (genéricos, no requieren API extra)
+        const NORMAL_ATTACKS  = ['Placaje', 'Golpe Rápido', 'Arañazo', 'Látigo', 'Mordisco'];
+        const SPECIAL_ATTACKS = ['Rayo', 'Lanzallamas', 'Hidrobomba', 'Psíquico', 'Hiperrayo'];
+
+        /** Llena los dos <select> de batalla con los Pokémon cargados */
+        function populateBattleSelectors() {
+            const sel1 = document.getElementById('battle-p1');
+            const sel2 = document.getElementById('battle-p2');
+
+            const sorted = [...loadedPokemon].sort((a, b) => a.name.localeCompare(b.name));
+            const options = sorted.map(p =>
+                `<option value="${p.id}">${capitalize(p.name)} (#${String(p.id).padStart(3,'0')})</option>`
+            ).join('');
+
+            const prev1 = sel1.value;
+            const prev2 = sel2.value;
+            sel1.innerHTML = options;
+            sel2.innerHTML = options;
+
+            // Intentar mantener la selección previa; si no, diferente por defecto
+            if (prev1) sel1.value = prev1;
+            if (prev2) sel2.value = prev2;
+            if (sel1.value === sel2.value && sorted.length > 1) {
+                sel2.value = sorted.find(p => String(p.id) !== sel1.value)?.id || sorted[1].id;
+            }
+        }
+
+        /** Actualiza la barra de HP de un combatiente */
+        function setBattleHP(player, pct) {
+            const clamped = Math.max(0, Math.min(100, pct));
+            const bar  = document.getElementById(`hp-bar-${player}`);
+            const text = document.getElementById(`hp-text-${player}`);
+            bar.style.width = clamped + '%';
+            text.textContent = Math.round(clamped) + '%';
+            bar.style.background = clamped > 50 ? '#4caf50' : clamped > 25 ? '#ff9800' : '#f44336';
+        }
+
+        /** Calcula el daño de un ataque */
+        function calcBattleDamage(attacker, defender, isSpecial) {
+            const atk = isSpecial ? attacker.stats[3].base_stat : attacker.stats[1].base_stat;
+            const def = isSpecial ? defender.stats[4].base_stat : defender.stats[2].base_stat;
+            const base = (atk * 2) / (def + 80) * 22;
+            const mult = isSpecial ? 1.5 : 1.0;
+            const rand = 0.85 + Math.random() * 0.30;
+            return Math.max(5, Math.floor(base * mult * rand));
+        }
+
+        /** Añade una línea al log de batalla con animación */
+        function logAdd(msg, cls) {
+            const log = document.getElementById('battle-log');
+            const div = document.createElement('div');
+            div.className = 'log-entry ' + (cls || '');
+            div.textContent = msg;
+            log.appendChild(div);
+            log.scrollTop = log.scrollHeight;
+        }
+
+        const delay = ms => new Promise(r => setTimeout(r, ms));
+
+        /** Muestra al ganador (o empate) en la sección inferior */
+        function showBattleResult(winner, p1, p2) {
+            const winDiv  = document.getElementById('battle-winner');
+            const wImg    = document.getElementById('winner-img');
+            const wName   = document.getElementById('winner-name');
+            const wTitle  = document.getElementById('winner-title');
+
+            winDiv.style.display = 'flex';
+
+            if (winner) {
+                const src = winner.sprites.other['official-artwork'].front_default
+                          || winner.sprites.front_default || '';
+                wTitle.textContent = '¡GANADOR!';
+                wImg.src = src;
+                wImg.alt = winner.name;
+                wImg.style.display = 'block';
+                wName.textContent  = capitalize(winner.name);
+            } else {
+                // Empate
+                wTitle.textContent = '¡EMPATE!';
+                wImg.style.display = 'none';
+                wName.textContent  = `${capitalize(p1.name)} y ${capitalize(p2.name)}`;
+            }
+
+            winDiv.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+
+        /** Motor principal de la batalla */
+        async function runBattle(p1, p2) {
+            // Stats base
+            const maxHp1 = p1.stats[0].base_stat;
+            const maxHp2 = p2.stats[0].base_stat;
+            let   hp1 = maxHp1;
+            let   hp2 = maxHp2;
+
+            // El Pokémon más rápido ataca primero (turns impares)
+            const speed1 = p1.stats[5].base_stat;
+            const speed2 = p2.stats[5].base_stat;
+            const [first, second, fpId, spId] = speed1 >= speed2
+                ? [p1, p2, 'p1', 'p2']
+                : [p2, p1, 'p2', 'p1'];
+
+            logAdd(`¡Comienza el combate!  ${capitalize(p1.name)} vs ${capitalize(p2.name)}`, 'log-start');
+            logAdd(`${capitalize(first.name)} ataca primero (Velocidad: ${Math.max(speed1,speed2)})`, 'log-turn');
+            await delay(900);
+
+            const MAX_TURNS = 5;
+
+            for (let turn = 1; turn <= MAX_TURNS; turn++) {
+                // Turno alterno: impar → first ataca; par → second ataca
+                const isFirstTurn = (turn % 2 === 1);
+                const attacker = isFirstTurn ? first  : second;
+                const defender = isFirstTurn ? second : first;
+                const atkId    = isFirstTurn ? fpId   : spId;
+                const defId    = isFirstTurn ? spId   : fpId;
+
+                // Disponibilidad de movimientos especiales (basada en turno global)
+                // Ataque especial: a partir del turno 4 (≥3 turnos transcurridos)
+                // Defensa especial: a partir del turno 3 (≥2 turnos transcurridos)
+                const canSpecialAtk = turn >= 4;
+                const canSpecialDef = turn >= 3;
+
+                const useSpecialAtk = canSpecialAtk && Math.random() < 0.50;
+                const useSpecialDef = canSpecialDef && Math.random() < 0.40;
+
+                const attackMisses = Math.random() < 0.20;      // 20 % de fallo
+                const defFails     = useSpecialDef && Math.random() < 0.15; // 15 % falla defensa especial
+
+                // ---- Encabezado del turno ----
+                logAdd(`— Turno ${turn}: ${capitalize(attacker.name)} ataca`, 'log-turn');
+                await delay(550);
+
+                if (attackMisses) {
+                    logAdd(`¡${capitalize(attacker.name)} falló el ataque!`, 'log-miss');
+                    await delay(650);
+                } else {
+                    // ---- Defensa especial del defensor ----
+                    let dmgReduction = 1.0;
+                    if (useSpecialDef && !defFails) {
+                        logAdd(`${capitalize(defender.name)} activó Defensa Especial`, 'log-def');
+                        dmgReduction = 0.60;
+                        await delay(400);
+                    } else if (useSpecialDef && defFails) {
+                        logAdd(`${capitalize(defender.name)} intentó Defensa Especial… ¡pero falló!`, 'log-miss');
+                        await delay(400);
+                    }
+
+                    // ---- Calcular y aplicar daño ----
+                    let dmg = Math.floor(calcBattleDamage(attacker, defender, useSpecialAtk) * dmgReduction);
+                    const atkName = useSpecialAtk
+                        ? SPECIAL_ATTACKS[Math.floor(Math.random() * SPECIAL_ATTACKS.length)]
+                        : NORMAL_ATTACKS [Math.floor(Math.random() * NORMAL_ATTACKS.length)];
+
+                    logAdd(
+                        `${capitalize(attacker.name)} usó ${atkName}${useSpecialAtk ? ' ✦ (ESPECIAL)' : ''} — ${dmg} de daño`,
+                        useSpecialAtk ? 'log-special' : 'log-atk'
+                    );
+                    await delay(550);
+
+                    // Aplicar daño al defensor correcto
+                    if (isFirstTurn) {
+                        hp2 = Math.max(0, hp2 - dmg);
+                        setBattleHP('p2', hp2 / maxHp2 * 100);
+                        logAdd(`${capitalize(second.name)} tiene ${Math.round(hp2 / maxHp2 * 100)}% de vida`, 'log-hp');
+                    } else {
+                        hp1 = Math.max(0, hp1 - dmg);
+                        setBattleHP('p1', hp1 / maxHp1 * 100);
+                        logAdd(`${capitalize(first.name)} tiene ${Math.round(hp1 / maxHp1 * 100)}% de vida`, 'log-hp');
+                    }
+                    await delay(650);
+                }
+
+                // ---- Verificar KO ----
+                if (hp1 <= 0 || hp2 <= 0) break;
+            }
+
+            await delay(500);
+
+            // ---- Determinar resultado ----
+            if (hp1 <= 0 && hp2 > 0) {
+                document.getElementById('fighter-' + fpId).classList.add('ko');
+                logAdd(`¡${capitalize(first.name)} fue derrotado! ${capitalize(second.name)} gana.`, 'log-ko');
+                await delay(700);
+                showBattleResult(second, p1, p2);
+            } else if (hp2 <= 0 && hp1 > 0) {
+                document.getElementById('fighter-' + spId).classList.add('ko');
+                logAdd(`¡${capitalize(second.name)} fue derrotado! ${capitalize(first.name)} gana.`, 'log-ko');
+                await delay(700);
+                showBattleResult(first, p1, p2);
+            } else {
+                logAdd('¡5 turnos sin vencedor! — EMPATE', 'log-draw');
+                await delay(700);
+                showBattleResult(null, p1, p2);
+            }
+        }
+
+        /** Punto de entrada: botón ¡Combatir! */
+        async function startBattle() {
+            const id1 = parseInt(document.getElementById('battle-p1').value);
+            const id2 = parseInt(document.getElementById('battle-p2').value);
+
+            if (id1 === id2) {
+                alert('¡Selecciona dos Pokémon diferentes!');
+                return;
+            }
+
+            const pk1 = loadedPokemon.find(p => p.id === id1);
+            const pk2 = loadedPokemon.find(p => p.id === id2);
+            if (!pk1 || !pk2) return;
+
+            // Mostrar arena y preparar pantalla
+            const arena = document.getElementById('battle-arena');
+            arena.style.display = 'flex';
+            arena.scrollIntoView({ behavior: 'smooth' });
+
+            // Fotos ya disponibles (official-artwork)
+            const imgSrc1 = pk1.sprites.other['official-artwork'].front_default || pk1.sprites.front_default || '';
+            const imgSrc2 = pk2.sprites.other['official-artwork'].front_default || pk2.sprites.front_default || '';
+
+            document.getElementById('arena-img-p1').src = imgSrc1;
+            document.getElementById('arena-img-p1').alt = pk1.name;
+            document.getElementById('arena-name-p1').textContent = capitalize(pk1.name);
+
+            document.getElementById('arena-img-p2').src = imgSrc2;
+            document.getElementById('arena-img-p2').alt = pk2.name;
+            document.getElementById('arena-name-p2').textContent = capitalize(pk2.name);
+
+            // Resetear estado visual
+            setBattleHP('p1', 100);
+            setBattleHP('p2', 100);
+            document.getElementById('fighter-p1').classList.remove('ko');
+            document.getElementById('fighter-p2').classList.remove('ko');
+            document.getElementById('battle-log').innerHTML = '';
+            document.getElementById('battle-winner').style.display = 'none';
+
+            // Deshabilitar botón durante la batalla
+            const btn = document.getElementById('btn-battle');
+            btn.disabled = true;
+            btn.textContent = 'Combatiendo…';
+
+            await runBattle(pk1, pk2);
+
+            btn.disabled = false;
+            btn.textContent = '¡Volver a combatir!';
+        }
+
+        // =============================================
+        //  FIN BATALLA
+        // =============================================
 
         (async function init() {
             await fetchPokemonList();

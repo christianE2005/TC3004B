@@ -737,3 +737,279 @@ body {
         max-height: 95vh;
     }
 }
+
+/* ================================================================
+   BATTLE SECTION
+   ================================================================ */
+.battle-section {
+    background: linear-gradient(160deg, #0d1b4a 0%, #1a237e 60%, #0d47a1 100%);
+    padding: 3rem 1rem 4rem;
+    margin-top: 2rem;
+}
+
+.battle-section-inner {
+    max-width: 860px;
+    margin: 0 auto;
+    text-align: center;
+}
+
+.battle-title {
+    font-size: 2rem;
+    font-weight: 800;
+    color: #ffffff;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    margin-bottom: 0.4rem;
+}
+
+.battle-subtitle {
+    color: #9fa8da;
+    font-size: 0.95rem;
+    margin-bottom: 2rem;
+}
+
+.battle-selectors {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+    margin-bottom: 1.5rem;
+}
+
+.selector-block {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.selector-block label {
+    color: #c5cae9;
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.selector-block select {
+    padding: 0.7rem 1.2rem;
+    font-size: 0.95rem;
+    border: 2px solid rgba(255,255,255,0.2);
+    border-radius: 10px;
+    background: rgba(255,255,255,0.1);
+    color: #ffffff;
+    cursor: pointer;
+    min-width: 220px;
+    outline: none;
+    transition: border-color 0.3s, background 0.3s;
+}
+
+.selector-block select option {
+    background: #1a237e;
+    color: #fff;
+}
+
+.selector-block select:focus {
+    border-color: #00bcd4;
+    background: rgba(255,255,255,0.15);
+}
+
+.vs-badge {
+    font-size: 1.6rem;
+    font-weight: 900;
+    color: #ffeb3b;
+    text-shadow: 0 0 16px rgba(255,235,59,0.6);
+    padding: 0 0.5rem;
+}
+
+.btn-battle {
+    padding: 0.85rem 3rem;
+    background: linear-gradient(135deg, #f44336, #e53935);
+    color: #fff;
+    border: none;
+    border-radius: 50px;
+    font-size: 1.1rem;
+    font-weight: 800;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+    box-shadow: 0 4px 20px rgba(244, 67, 54, 0.45);
+    margin-bottom: 2rem;
+}
+
+.btn-battle:hover {
+    transform: translateY(-3px) scale(1.04);
+    box-shadow: 0 8px 30px rgba(244, 67, 54, 0.6);
+}
+
+/* --- Arena --- */
+.battle-arena {
+    display: none;
+    flex-direction: column;
+    gap: 1.5rem;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 20px;
+    padding: 1.8rem 1.5rem;
+    backdrop-filter: blur(4px);
+}
+
+.arena-fighters {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.fighter {
+    flex: 1;
+    min-width: 140px;
+    max-width: 200px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.arena-poke-img {
+    width: 130px;
+    height: 130px;
+    object-fit: contain;
+    filter: drop-shadow(0 4px 16px rgba(0,0,0,0.5));
+    transition: filter 0.3s;
+}
+
+.fighter.ko .arena-poke-img {
+    filter: grayscale(1) drop-shadow(0 4px 10px rgba(0,0,0,0.4));
+    opacity: 0.5;
+}
+
+.fighter-name {
+    color: #ffffff;
+    font-size: 1rem;
+    font-weight: 700;
+    text-transform: capitalize;
+}
+
+.hp-bar-wrap {
+    width: 100%;
+    height: 10px;
+    background: rgba(255,255,255,0.15);
+    border-radius: 5px;
+    overflow: hidden;
+}
+
+.hp-bar {
+    height: 100%;
+    width: 100%;
+    background: #4caf50;
+    border-radius: 5px;
+    transition: width 0.6s ease, background 0.4s ease;
+}
+
+.hp-text {
+    color: #c5cae9;
+    font-size: 0.85rem;
+    font-weight: 700;
+}
+
+.arena-divider {
+    font-size: 2rem;
+    color: #ffeb3b;
+    text-shadow: 0 0 12px rgba(255,235,59,0.5);
+    padding: 0 0.5rem;
+}
+
+/* --- Battle log --- */
+.battle-log {
+    background: #0a1128;
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 12px;
+    padding: 1rem 1.2rem;
+    max-height: 280px;
+    overflow-y: auto;
+    text-align: left;
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    scrollbar-width: thin;
+    scrollbar-color: #1a237e transparent;
+}
+
+.log-entry {
+    font-size: 0.88rem;
+    line-height: 1.45;
+    color: #c5cae9;
+    padding: 0.25rem 0.4rem;
+    border-radius: 6px;
+    animation: logFadeIn 0.3s ease;
+}
+
+@keyframes logFadeIn {
+    from { opacity: 0; transform: translateX(-6px); }
+    to   { opacity: 1; transform: translateX(0); }
+}
+
+.log-start  { color: #ffeb3b; font-weight: 700; font-size: 0.95rem; }
+.log-turn   { color: #90caf9; font-weight: 600; border-top: 1px solid rgba(255,255,255,0.06); margin-top: 0.3rem; padding-top: 0.4rem; }
+.log-atk    { color: #ffffff; }
+.log-special { color: #ce93d8; font-weight: 700; }
+.log-def    { color: #80cbc4; }
+.log-miss   { color: #ef9a9a; font-style: italic; }
+.log-hp     { color: #a5d6a7; font-size: 0.82rem; padding-left: 1rem; }
+.log-ko     { color: #ff5252; font-weight: 800; font-size: 0.95rem; }
+.log-draw   { color: #ffcc02; font-weight: 800; font-size: 0.95rem; text-align: center; }
+
+/* --- Winner display --- */
+.battle-winner {
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 1.5rem 1rem;
+    animation: winnerPop 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) both;
+}
+
+@keyframes winnerPop {
+    from { transform: scale(0.7); opacity: 0; }
+    to   { transform: scale(1);   opacity: 1; }
+}
+
+.winner-title {
+    font-size: 2rem;
+    font-weight: 900;
+    letter-spacing: 3px;
+    color: #ffeb3b;
+    text-transform: uppercase;
+    text-shadow: 0 0 20px rgba(255,235,59,0.7), 0 2px 0 rgba(0,0,0,0.4);
+}
+
+.winner-img {
+    width: 180px;
+    height: 180px;
+    object-fit: contain;
+    filter: drop-shadow(0 0 24px rgba(255,235,59,0.5));
+    animation: float 3s ease-in-out infinite;
+}
+
+.winner-name {
+    color: #ffffff;
+    font-size: 1.4rem;
+    font-weight: 800;
+    text-transform: capitalize;
+    letter-spacing: 1px;
+}
+
+/* Responsive battle */
+@media (max-width: 600px) {
+    .battle-selectors { flex-direction: column; }
+    .vs-badge { transform: rotate(90deg); }
+    .selector-block select { min-width: 260px; }
+    .arena-fighters { flex-direction: column; }
+    .arena-divider { transform: rotate(90deg); }
+    .fighter { max-width: 280px; }
+    .arena-poke-img { width: 110px; height: 110px; }
+}
